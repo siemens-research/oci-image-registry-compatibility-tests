@@ -148,11 +148,15 @@ func TestMain(t *testing.T) {
 	checkError(t, err)
 }
 
+func TestNoManifestMediaType(t *testing.T) {
+	t.Run("Manifest without a `mediaType` is accepted.", testNoManifestMediaType)
+}
+
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] This property SHOULD be used [...]
 // Therefore not specifying this property MUST be supported.
-func TestNoManifestMediaType(t *testing.T) {
+func testNoManifestMediaType(t *testing.T) {
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -164,12 +168,16 @@ func TestNoManifestMediaType(t *testing.T) {
 	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	_, err := manifestPutOCI(client, reference, m)
 	checkError(t, err)
+}
+
+func TestDefaultMediaType(t *testing.T) {
+	t.Run("Manifest with `mediaType` `application/vnd.oci.image.manifest.v1+json` is accepted.", testDefaultMediaType)
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
-func TestDefaultMediaType(t *testing.T) {
+func testDefaultMediaType(t *testing.T) {
 
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
@@ -183,12 +191,16 @@ func TestDefaultMediaType(t *testing.T) {
 	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	_, err := manifestPutOCI(client, reference, m)
 	checkError(t, err)
+}
+
+func TestDefaultConfigType(t *testing.T) {
+	t.Run("Manifest with `config/mediaType` `application/vnd.oci.image.config.v1+json` is accepted.", testDefaultConfigType)
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // config/mediaType [...] Implementations MUST support at least the following media types: application/vnd.oci.image.config.v1+json [...]
-func TestDefaultConfigType(t *testing.T) {
+func testDefaultConfigType(t *testing.T) {
 
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
@@ -204,10 +216,14 @@ func TestDefaultConfigType(t *testing.T) {
 	checkError(t, err)
 }
 
+func TestEmptyConfigFileAndArtifactType(t *testing.T) {
+	t.Run("Manifest with custom `artifactType` is accepted.", testEmptyConfigFileAndArtifactType)
+}
+
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // artifactType [...] This MUST be set when config.mediaType is set to the empty value [...]
-func TestEmptyConfigFileAndArtifactType(t *testing.T) {
+func testEmptyConfigFileAndArtifactType(t *testing.T) {
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -224,10 +240,14 @@ func TestEmptyConfigFileAndArtifactType(t *testing.T) {
 	checkError(t, err)
 }
 
+func TestArtifactTypeOverConfigType(t *testing.T) {
+	t.Run("Manifest with custom `config/mediaType`, as artifact type, is accepted.", testArtifactTypeOverConfigType)
+}
+
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // config/mediaType [...] MUST NOT error on encountering a value that is unknown to the implementation [...]
-func TestArtifactTypeOverConfigType(t *testing.T) {
+func testArtifactTypeOverConfigType(t *testing.T) {
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -243,10 +263,14 @@ func TestArtifactTypeOverConfigType(t *testing.T) {
 	checkError(t, err)
 }
 
+func TestBlobMediaType(t *testing.T) {
+	t.Run("Manifest with custom `blob/mediaType` is accepted.", testBlobMediaType)
+}
+
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // layers/mediaType [...] MUST NOT error on encountering a mediaType that is unknown to the implementation [...]
-func TestBlobMediaType(t *testing.T) {
+func testBlobMediaType(t *testing.T) {
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -262,10 +286,14 @@ func TestBlobMediaType(t *testing.T) {
 	checkError(t, err)
 }
 
+func TestWrongManifestMediaTypeFails(t *testing.T) {
+	t.Run("Manifest with wrong `mediaType` is rejected.", testWrongManifestMediaTypeFails)
+}
+
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
-func TestWrongManifestMediaTypeFails(t *testing.T) {
+func testWrongManifestMediaTypeFails(t *testing.T) {
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -280,10 +308,14 @@ func TestWrongManifestMediaTypeFails(t *testing.T) {
 	expectError(t, err)
 }
 
+func TestManifestWithSubjectEntry(t *testing.T) {
+	t.Run("Manifest with `subject` property is accepted.", testManifestWithSubjectEntry)
+}
+
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // subject [...] This OPTIONAL property specifies a descriptor of another manifest [...]
-func TestManifestWithSubjectEntry(t *testing.T) {
+func testManifestWithSubjectEntry(t *testing.T) {
 
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
