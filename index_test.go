@@ -12,8 +12,9 @@ package main_test
 import (
 	"context"
 	"encoding/json"
-	"testing"
 
+	g "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/types/descriptor"
 	"github.com/regclient/regclient/types/manifest"
@@ -43,19 +44,19 @@ func getTestIndex() v1.Index {
 	return m
 }
 
-func getTestManifests(t *testing.T) []descriptor.Descriptor {
+func getTestManifests() []descriptor.Descriptor {
 	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+	Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+	Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
 
 	// Create manifest
 	m := getTestManifest()
 	m.MediaType = mediatype.OCI1Manifest
 
 	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+	g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	manifest, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+	Expect(err).To(BeNil())
 	manifests := []descriptor.Descriptor{
 		{
 			MediaType: mediatype.OCI1Manifest,
@@ -69,106 +70,169 @@ func getTestManifests(t *testing.T) []descriptor.Descriptor {
 // Specification says:
 // mediaType [...] This property SHOULD be used [...]
 // Therefore not specifying this property MUST be supported.
-func testNoIndexMediaType(t *testing.T) {
-	// Create manifest to refer from index
-	manifests := getTestManifests(t)
+var testNoIndexMediaType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create index
-	i := getTestIndex()
-	i.Manifests = manifests
+		g.Context("Push", func() {
+			g.Specify("Push index without any mediaType", func() {
+				// Create manifest to refer from index
+				manifests := getTestManifests()
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(i, "", "    "))))
-	_, err := indexPutOCI(client, reference, i)
-	checkError(t, err)
+				// Create index
+				i := getTestIndex()
+				i.Manifests = manifests
 
-    // fetch index and manifest
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(i, "", "    "))))
+				_, err := indexPutOCI(client, reference, i)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Index -> https://github.com/opencontainers/image-spec/blob/v1.1.0/image-index.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.index.v1+json [...]
-func testDefaultIndexMediaType(t *testing.T) {
-	// Create manifest to refer from index
-	manifests := getTestManifests(t)
+var testDefaultIndexMediaType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create index
-	i := getTestIndex()
-	i.MediaType = mediatype.OCI1ManifestList
-	i.Manifests = manifests
+		g.Context("Push", func() {
+			g.Specify("Push index with default mediaType (application/vnd.oci.image.index.v1+json)", func() {
+				// Create manifest to refer from index
+				manifests := getTestManifests()
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(i, "", "    "))))
-	_, err := indexPutOCI(client, reference, i)
-	checkError(t, err)
+				// Create index
+				i := getTestIndex()
+				i.MediaType = mediatype.OCI1ManifestList
+				i.Manifests = manifests
+
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(i, "", "    "))))
+				_, err := indexPutOCI(client, reference, i)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Index -> https://github.com/opencontainers/image-spec/blob/v1.1.0/image-index.md
 // Specification says:
 // artifactType [...] MUST comply with RFC 6838
-func testIndexArtifactType(t *testing.T) {
-	// Create manifest to refer from index
-	manifests := getTestManifests(t)
+var testIndexArtifactType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create index
-	i := getTestIndex()
-	i.MediaType = mediatype.OCI1ManifestList
-	i.ArtifactType = "application/my-artifact"
-	i.Manifests = manifests
+		g.Context("Push", func() {
+			g.Specify("Push index with custom artifactType", func() {
+				// Create manifest to refer from index
+				manifests := getTestManifests()
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(i, "", "    "))))
-	_, err := indexPutOCI(client, reference, i)
-	checkError(t, err)
+				// Create index
+				i := getTestIndex()
+				i.MediaType = mediatype.OCI1ManifestList
+				i.ArtifactType = "application/my-artifact"
+				i.Manifests = manifests
+
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(i, "", "    "))))
+				_, err := indexPutOCI(client, reference, i)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Index -> https://github.com/opencontainers/image-spec/blob/v1.1.0/image-index.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.index.v1+json [...]
-func testWrongIndexMediaTypeFails(t *testing.T) {
-	// Create manifest to refer from index
-	manifests := getTestManifests(t)
+var testWrongIndexMediaTypeFails = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create index
-	i := getTestIndex()
-	i.MediaType = "application/wrong.type+json"
-	i.Manifests = manifests
+		g.Context("Push", func() {
+			g.Specify("Push index with invalid mediaType", func() {
+				// Create manifest to refer from index
+				manifests := getTestManifests()
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(i, "", "    "))))
-	_, err := indexPutOCI(client, reference, i)
-	expectError(t, err)
+				// Create index
+				i := getTestIndex()
+				i.MediaType = "application/wrong.type+json"
+				i.Manifests = manifests
+
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(i, "", "    "))))
+				_, err := indexPutOCI(client, reference, i)
+				Expect(err).To(MatchError("manifest contains an unexpected media type: expected application/vnd.oci.image.index.v1+json, received application/wrong.type+json"))
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Index -> https://github.com/opencontainers/image-spec/blob/v1.1.0/image-index.md
 // Specification says:
 // manifests/mediaType SHOULD support [...] media types application/vnd.oci.image.index.v1+json
-func testNestedIndexes(t *testing.T) {
-	// Create manifest to refer from index
-	manifests := getTestManifests(t)
+var testNestedIndexes = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create lower index
-	i := getTestIndex()
-	i.MediaType = mediatype.OCI1ManifestList
-	i.Manifests = manifests
+		g.Context("Push", func() {
+			g.Specify("Push manifest with invalid mediaType", func() {
+				// Create manifest to refer from index
+				manifests := getTestManifests()
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(i, "", "    "))))
-	nestedIndex, err := indexPutOCI(client, reference, i)
-	checkError(t, err)
+				// Create lower index
+				i := getTestIndex()
+				i.MediaType = mediatype.OCI1ManifestList
+				i.Manifests = manifests
 
-	// Create top index
-	i = getTestIndex()
-	i.MediaType = mediatype.OCI1ManifestList
-	var nestedIndexDesc descriptor.Descriptor
-	nestedIndexDesc.Digest = nestedIndex.GetDescriptor().Digest
-	nestedIndexDesc.Size = nestedIndex.GetDescriptor().Size
-	nestedIndexDesc.MediaType = mediatype.OCI1ManifestList
-	manifests = append(i.Manifests, nestedIndexDesc)
-	i.Manifests = manifests
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(i, "", "    "))))
+				nestedIndex, err := indexPutOCI(client, reference, i)
+				Expect(err).To(BeNil())
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(i, "", "    "))))
-	_, err = indexPutOCI(client, reference, i)
-	checkError(t, err)
+				// Create top index
+				i = getTestIndex()
+				i.MediaType = mediatype.OCI1ManifestList
+				var nestedIndexDesc descriptor.Descriptor
+				nestedIndexDesc.Digest = nestedIndex.GetDescriptor().Digest
+				nestedIndexDesc.Size = nestedIndex.GetDescriptor().Size
+				nestedIndexDesc.MediaType = mediatype.OCI1ManifestList
+				manifests = append(i.Manifests, nestedIndexDesc)
+				i.Manifests = manifests
+
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(i, "", "    "))))
+				_, err = indexPutOCI(client, reference, i)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }

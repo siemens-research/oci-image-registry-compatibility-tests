@@ -16,11 +16,46 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"path/filepath"
 
+	g "github.com/onsi/ginkgo/v2"
 	"github.com/regclient/regclient/types/ref"
+	"github.com/onsi/ginkgo/v2/reporters"
+	. "github.com/onsi/gomega"
 )
 
-func TestMain(t *testing.T) {
+const (
+	suiteDescription = "OCI Feature Tests"
+)
+
+func TestConformance(t *testing.T) {
+	g.Describe(suiteDescription, func() {
+		testNoManifestMediaType()
+		testDefaultMediaType()
+		testDefaultConfigType()
+		testEmptyConfigFileAndArtifactType()
+		testArtifactTypeOverConfigType()
+		testBlobMediaType()
+		testWrongManifestMediaTypeFails()
+		testManifestWithSubjectEntry()
+		testNoIndexMediaType()
+		testDefaultIndexMediaType()
+		testIndexArtifactType()
+		testWrongIndexMediaTypeFails()
+		testNestedIndexes()
+	})
+
+    reportJUnitFilename := filepath.Join(".", "junit.xml")
+	RegisterFailHandler(g.Fail)
+	suiteConfig, reporterConfig := g.GinkgoConfiguration()
+	g.ReportAfterSuite("junit custom reporter", func(r g.Report) {
+		if reportJUnitFilename != "" {
+			_ = reporters.GenerateJUnitReportWithConfig(r, reportJUnitFilename, reporters.JunitReportConfig{
+				OmitLeafNodeType: true,
+			})
+		}
+	})
+
 	// Set registry details
 	host := *flag.String("host", os.Getenv("REGISTRY_HOST"), "The registry host")
 	user := *flag.String("user", os.Getenv("REGISTRY_USER"), "The login user")
@@ -32,57 +67,7 @@ func TestMain(t *testing.T) {
 
 	host = strings.Replace(strings.Replace(host, "http://", "", 1), "https://", "", 1)
 	reference, err = ref.New(host + "/" + namespace + ":demo")
-	checkError(t, err)
-}
+	Expect(err).To(BeNil())
 
-func TestNoManifestMediaType(t *testing.T) {
-	t.Run("Manifest without a `mediaType` is accepted.", testNoManifestMediaType)
-}
-
-func TestDefaultMediaType(t *testing.T) {
-	t.Run("Manifest with `mediaType` `application/vnd.oci.image.manifest.v1+json` is accepted.", testDefaultMediaType)
-}
-
-func TestDefaultConfigType(t *testing.T) {
-	t.Run("Manifest with `config/mediaType` `application/vnd.oci.image.config.v1+json` is accepted.", testDefaultConfigType)
-}
-
-func TestEmptyConfigFileAndArtifactType(t *testing.T) {
-	t.Run("Manifest with custom `artifactType` is accepted.", testEmptyConfigFileAndArtifactType)
-}
-
-func TestArtifactTypeOverConfigType(t *testing.T) {
-	t.Run("Manifest with custom `config/mediaType`, as artifact type, is accepted.", testArtifactTypeOverConfigType)
-}
-
-func TestBlobMediaType(t *testing.T) {
-	t.Run("Manifest with custom `blob/mediaType` is accepted.", testBlobMediaType)
-}
-
-func TestWrongManifestMediaTypeFails(t *testing.T) {
-	t.Run("Manifest with wrong `mediaType` is rejected.", testWrongManifestMediaTypeFails)
-}
-
-func TestManifestWithSubjectEntry(t *testing.T) {
-	t.Run("Manifest with `subject` property is accepted.", testManifestWithSubjectEntry)
-}
-
-func TestNoIndexMediaType(t *testing.T) {
-	t.Run("Index without mediaType is accepted.", testNoIndexMediaType)
-}
-
-func TestDefaultIndexMediaType(t *testing.T) {
-	t.Run("Index with `mediaType` `application/vnd.oci.image.index.v1+json` is accepted.", testDefaultIndexMediaType)
-}
-
-func TestIndexArtifactType(t *testing.T) {
-	t.Run("Index with custom `artifactType` is accepted.", testIndexArtifactType)
-}
-
-func TestWrongIndexMediaTypeFails(t *testing.T) {
-	t.Run("Index with wrong `mediaType` is rejected.", testWrongIndexMediaTypeFails)
-}
-
-func TestNestedIndexes(t *testing.T) {
-	t.Run("Indexes referring other indexes are accepted.", testNestedIndexes)
+	g.RunSpecs(t, "OCI conformance tests", suiteConfig, reporterConfig)
 }
