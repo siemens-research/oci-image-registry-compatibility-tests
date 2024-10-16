@@ -89,18 +89,6 @@ func manifestPutRaw(client *regclient.RegClient, ref ref.Ref, m []byte) (manifes
 	return manifest, client.ManifestPut(ctx, ref, manifest)
 }
 
-//lint:ignore U1000 Ignore unused function
-func manifestPutFile(client *regclient.RegClient, ref ref.Ref, path string) (manifest.Manifest, error) {
-	raw, err := os.ReadFile(path)
-	var manifest manifest.Manifest
-
-	if err != nil {
-		return manifest, err
-	}
-
-	return manifestPutRaw(client, ref, raw)
-}
-
 func manifestPutOCI(client *regclient.RegClient, ref ref.Ref, m v1.Manifest) (manifest.Manifest, error) {
 	ctx := context.Background()
 
