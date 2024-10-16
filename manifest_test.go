@@ -4,6 +4,7 @@
  *
  * Authors:
  *  Tobias Schaffner <tobias.schaffner@siemens.com>
+ *  Silvano Cirujano Cuesta <silvano.cirujano-cuesta@siemens.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,15 +14,11 @@ package main_test
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"os"
-	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/opencontainers/go-digest"
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/config"
 	"github.com/regclient/regclient/types/descriptor"
 	"github.com/regclient/regclient/types/manifest"
 	"github.com/regclient/regclient/types/mediatype"
@@ -29,41 +26,15 @@ import (
 	"github.com/regclient/regclient/types/ref"
 )
 
-var client *regclient.RegClient
-var reference ref.Ref
+func manifestPutOCI(client *regclient.RegClient, ref ref.Ref, m v1.Manifest) (manifest.Manifest, error) {
+	ctx := context.Background()
 
-func checkError(t *testing.T, err error) {
+	manifest, err := manifest.New(manifest.WithOrig(m))
 	if err != nil {
-		_, filename, line, _ := runtime.Caller(1)
-		t.Fatalf("%s:%d %v", filename, line, err)
-	}
-}
-
-func expectError(t *testing.T, err error) {
-	_, filename, line, _ := runtime.Caller(1)
-	if err == nil {
-		t.Fatalf("%s:%d succeeded unexpectedly!", filename, line)
-	} else {
-		t.Logf("%s:%d expected error: %v", filename, line, err)
-	}
-}
-
-func ignoreError[T any](val T, _ error) T {
-	return val
-}
-
-func loginToRegistry(host string, user string, password string, tls bool) *regclient.RegClient {
-	configHost := config.Host{
-		Name: host,
-		User: user,
-		Pass: password,
+		return manifest, err
 	}
 
-	if !tls {
-		configHost.TLS = config.TLSDisabled
-	}
-
-	return regclient.New(regclient.WithConfigHost(configHost))
+	return manifest, client.ManifestPut(ctx, ref, manifest)
 }
 
 func blobPut(client *regclient.RegClient, ref ref.Ref, path string) error {
@@ -76,28 +47,6 @@ func blobPut(client *regclient.RegClient, ref ref.Ref, path string) error {
 
 	_, err = client.BlobPut(ctx, ref, descriptor.Descriptor{}, raw)
 	return err
-}
-
-func manifestPutRaw(client *regclient.RegClient, ref ref.Ref, m []byte) (manifest.Manifest, error) {
-	ctx := context.Background()
-
-	manifest, err := manifest.New(manifest.WithRaw(m))
-	if err != nil {
-		return manifest, err
-	}
-
-	return manifest, client.ManifestPut(ctx, ref, manifest)
-}
-
-func manifestPutOCI(client *regclient.RegClient, ref ref.Ref, m v1.Manifest) (manifest.Manifest, error) {
-	ctx := context.Background()
-
-	manifest, err := manifest.New(manifest.WithOrig(m))
-	if err != nil {
-		return manifest, err
-	}
-
-	return manifest, client.ManifestPut(ctx, ref, manifest)
 }
 
 func getTestManifest() v1.Manifest {
@@ -121,25 +70,6 @@ func getTestManifest() v1.Manifest {
 	return m
 }
 
-func TestMain(t *testing.T) {
-	// Set registry details
-	host := *flag.String("host", os.Getenv("REGISTRY_HOST"), "The registry host")
-	user := *flag.String("user", os.Getenv("REGISTRY_USER"), "The login user")
-	password := *flag.String("password", os.Getenv("REGISTRY_PASSWORD"), "The login password")
-	namespace := *flag.String("namespace", os.Getenv("REGISTRY_NAMESPACE"), "The namespace that should be used when pushing")
-	var err error
-
-	client = loginToRegistry(host, user, password, !strings.HasPrefix(host, "http://"))
-
-	host = strings.Replace(strings.Replace(host, "http://", "", 1), "https://", "", 1)
-	reference, err = ref.New(host + "/" + namespace + ":demo")
-	checkError(t, err)
-}
-
-func TestNoManifestMediaType(t *testing.T) {
-	t.Run("Manifest without a `mediaType` is accepted.", testNoManifestMediaType)
-}
-
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] This property SHOULD be used [...]
@@ -156,10 +86,6 @@ func testNoManifestMediaType(t *testing.T) {
 	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	_, err := manifestPutOCI(client, reference, m)
 	checkError(t, err)
-}
-
-func TestDefaultMediaType(t *testing.T) {
-	t.Run("Manifest with `mediaType` `application/vnd.oci.image.manifest.v1+json` is accepted.", testDefaultMediaType)
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
@@ -180,10 +106,6 @@ func testDefaultMediaType(t *testing.T) {
 	checkError(t, err)
 }
 
-func TestDefaultConfigType(t *testing.T) {
-	t.Run("Manifest with `config/mediaType` `application/vnd.oci.image.config.v1+json` is accepted.", testDefaultConfigType)
-}
-
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // config/mediaType [...] Implementations MUST support at least the following media types: application/vnd.oci.image.config.v1+json [...]
@@ -200,10 +122,6 @@ func testDefaultConfigType(t *testing.T) {
 	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	_, err := manifestPutOCI(client, reference, m)
 	checkError(t, err)
-}
-
-func TestEmptyConfigFileAndArtifactType(t *testing.T) {
-	t.Run("Manifest with custom `artifactType` is accepted.", testEmptyConfigFileAndArtifactType)
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
@@ -226,10 +144,6 @@ func testEmptyConfigFileAndArtifactType(t *testing.T) {
 	checkError(t, err)
 }
 
-func TestArtifactTypeOverConfigType(t *testing.T) {
-	t.Run("Manifest with custom `config/mediaType`, as artifact type, is accepted.", testArtifactTypeOverConfigType)
-}
-
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // config/mediaType [...] MUST NOT error on encountering a value that is unknown to the implementation [...]
@@ -247,10 +161,6 @@ func testArtifactTypeOverConfigType(t *testing.T) {
 	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	_, err := manifestPutOCI(client, reference, m)
 	checkError(t, err)
-}
-
-func TestBlobMediaType(t *testing.T) {
-	t.Run("Manifest with custom `blob/mediaType` is accepted.", testBlobMediaType)
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
@@ -272,10 +182,6 @@ func testBlobMediaType(t *testing.T) {
 	checkError(t, err)
 }
 
-func TestWrongManifestMediaTypeFails(t *testing.T) {
-	t.Run("Manifest with wrong `mediaType` is rejected.", testWrongManifestMediaTypeFails)
-}
-
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
@@ -292,10 +198,6 @@ func testWrongManifestMediaTypeFails(t *testing.T) {
 	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
 	_, err := manifestPutOCI(client, reference, m)
 	expectError(t, err)
-}
-
-func TestManifestWithSubjectEntry(t *testing.T) {
-	t.Run("Manifest with `subject` property is accepted.", testManifestWithSubjectEntry)
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
