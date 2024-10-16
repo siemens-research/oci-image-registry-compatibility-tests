@@ -178,7 +178,6 @@ func TestDefaultMediaType(t *testing.T) {
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
 func testDefaultMediaType(t *testing.T) {
-
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -201,7 +200,6 @@ func TestDefaultConfigType(t *testing.T) {
 // Specification says:
 // config/mediaType [...] Implementations MUST support at least the following media types: application/vnd.oci.image.config.v1+json [...]
 func testDefaultConfigType(t *testing.T) {
-
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
@@ -316,7 +314,6 @@ func TestManifestWithSubjectEntry(t *testing.T) {
 // Specification says:
 // subject [...] This OPTIONAL property specifies a descriptor of another manifest [...]
 func testManifestWithSubjectEntry(t *testing.T) {
-
 	// Push artifact and config
 	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
