@@ -145,8 +145,8 @@ func TestNoManifestMediaType(t *testing.T) {
 // mediaType [...] This property SHOULD be used [...]
 // Therefore not specifying this property MUST be supported.
 func testNoManifestMediaType(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -166,8 +166,8 @@ func TestDefaultMediaType(t *testing.T) {
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
 func testDefaultMediaType(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -188,8 +188,8 @@ func TestDefaultConfigType(t *testing.T) {
 // Specification says:
 // config/mediaType [...] Implementations MUST support at least the following media types: application/vnd.oci.image.config.v1+json [...]
 func testDefaultConfigType(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -210,8 +210,8 @@ func TestEmptyConfigFileAndArtifactType(t *testing.T) {
 // Specification says:
 // artifactType [...] This MUST be set when config.mediaType is set to the empty value [...]
 func testEmptyConfigFileAndArtifactType(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -234,8 +234,8 @@ func TestArtifactTypeOverConfigType(t *testing.T) {
 // Specification says:
 // config/mediaType [...] MUST NOT error on encountering a value that is unknown to the implementation [...]
 func testArtifactTypeOverConfigType(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -257,8 +257,8 @@ func TestBlobMediaType(t *testing.T) {
 // Specification says:
 // layers/mediaType [...] MUST NOT error on encountering a mediaType that is unknown to the implementation [...]
 func testBlobMediaType(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -280,8 +280,8 @@ func TestWrongManifestMediaTypeFails(t *testing.T) {
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
 func testWrongManifestMediaTypeFails(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create manifest
@@ -302,8 +302,8 @@ func TestManifestWithSubjectEntry(t *testing.T) {
 // Specification says:
 // subject [...] This OPTIONAL property specifies a descriptor of another manifest [...]
 func testManifestWithSubjectEntry(t *testing.T) {
-	// Push artifact and config
-	checkError(t, blobPut(client, reference, "test-data/demo-artifact.txt"))
+	// Push file and config
+	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
 	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
 
 	// Create first manifest
