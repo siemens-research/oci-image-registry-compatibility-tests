@@ -15,8 +15,9 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"testing"
 
+	g "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/opencontainers/go-digest"
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/types/descriptor"
@@ -24,6 +25,10 @@ import (
 	"github.com/regclient/regclient/types/mediatype"
 	v1 "github.com/regclient/regclient/types/oci/v1"
 	"github.com/regclient/regclient/types/ref"
+)
+
+var (
+	titleManifest = "OCI Manifest"
 )
 
 func manifestPutOCI(client *regclient.RegClient, ref ref.Ref, m v1.Manifest) (manifest.Manifest, error) {
@@ -74,160 +79,233 @@ func getTestManifest() v1.Manifest {
 // Specification says:
 // mediaType [...] This property SHOULD be used [...]
 // Therefore not specifying this property MUST be supported.
-func testNoManifestMediaType(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testNoManifestMediaType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
+		g.Context("Push", func() {
+			g.Specify("Push manifest without any mediaType", func() {
+				// Create manifest
+				m := getTestManifest()
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
-func testDefaultMediaType(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testDefaultMediaType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
+		g.Context("Push", func() {
+			g.Specify("Push manifest with default mediaType (application/vnd.oci.image.manifest.v1+json)", func() {
+				// Create manifest
+				m := getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // config/mediaType [...] Implementations MUST support at least the following media types: application/vnd.oci.image.config.v1+json [...]
-func testDefaultConfigType(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testDefaultConfigType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
+		g.Context("Push", func() {
+			g.Specify("Push manifest with default config/mediaType (application/vnd.oci.image.config.v1+json)", func() {
+				// Create manifest
+				m := getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
+				m.Config.MediaType = mediatype.OCI1ImageConfig
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // artifactType [...] This MUST be set when config.mediaType is set to the empty value [...]
-func testEmptyConfigFileAndArtifactType(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testEmptyConfigFileAndArtifactType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
-	m.ArtifactType = "application/my-artifact"
-	m.Config.MediaType = mediatype.OCI1Empty
+		g.Context("Push", func() {
+			g.Specify("Push manifest with custom artifactType and empty config/mediaType", func() {
+				// Create manifest
+				m := getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
+				m.ArtifactType = "application/my-artifact"
+				m.Config.MediaType = mediatype.OCI1Empty
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // config/mediaType [...] MUST NOT error on encountering a value that is unknown to the implementation [...]
-func testArtifactTypeOverConfigType(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testArtifactTypeOverConfigType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
-	m.Config.MediaType = "application/my-artifact-legacy"
+		g.Context("Push", func() {
+			g.Specify("Push manifest with custom config/mediaType (representing the artifact type)", func() {
+				// Create manifest
+				m := getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
+				m.Config.MediaType = "application/my-artifact-legacy"
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // layers/mediaType [...] MUST NOT error on encountering a mediaType that is unknown to the implementation [...]
-func testBlobMediaType(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testBlobMediaType = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
-	m.Layers[0].MediaType = "application/my-blob-format"
+		g.Context("Push", func() {
+			g.Specify("Push manifest with custom layer/mediaType (representing the blob type)", func() {
+				// Create manifest
+				m := getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
+				m.Layers[0].MediaType = "application/my-blob-format"
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.manifest.v1+json [...]
-func testWrongManifestMediaTypeFails(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testWrongManifestMediaTypeFails = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create manifest
-	m := getTestManifest()
-	m.MediaType = "application/wrong.type+json"
+		g.Context("Push", func() {
+			g.Specify("Push manifest with invalid mediaType", func() {
+				// Create manifest
+				m := getTestManifest()
+				m.MediaType = "application/wrong.type+json"
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err := manifestPutOCI(client, reference, m)
-	expectError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(MatchError("manifest contains an unexpected media type: expected application/vnd.oci.image.manifest.v1+json, received application/wrong.type+json"))
+			})
+		})
+	})
 }
 
 // OCI Image Specification - Manifest -> https://github.com/opencontainers/image-spec/blob/v1.1.0/manifest.md
 // Specification says:
 // subject [...] This OPTIONAL property specifies a descriptor of another manifest [...]
-func testManifestWithSubjectEntry(t *testing.T) {
-	// Push file and config
-	checkError(t, blobPut(client, reference, "test-data/demo-file.txt"))
-	checkError(t, blobPut(client, reference, "test-data/demo-config.txt"))
+var testManifestWithSubjectEntry = func() {
+	g.Context(titleManifest, func() {
+		g.Context("Setup", func() {
+			g.Specify("Push file and config", func() {
+				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
+				Expect(blobPut(client, reference, "test-data/demo-config.txt")).To(BeNil())
+			})
+		})
 
-	// Create first manifest
-	m := getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
+		g.Context("Push", func() {
+			g.Specify("Push manifest with invalid mediaType", func() {
+				// Create first manifest
+				m := getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	first_manifest, err := manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				first_manifest, err := manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
 
-	// Create second manifest
-	m = getTestManifest()
-	m.MediaType = mediatype.OCI1Manifest
-	var subject descriptor.Descriptor
-	subject.Digest = first_manifest.GetDescriptor().Digest
-	subject.Size = first_manifest.GetDescriptor().Size
-	subject.MediaType = mediatype.OCI1Manifest
-	m.Subject = &subject
+				// Create second manifest
+				m = getTestManifest()
+				m.MediaType = mediatype.OCI1Manifest
+				var subject descriptor.Descriptor
+				subject.Digest = first_manifest.GetDescriptor().Digest
+				subject.Size = first_manifest.GetDescriptor().Size
+				subject.MediaType = mediatype.OCI1Manifest
+				m.Subject = &subject
 
-	// Log and push to registry
-	t.Log(string(ignoreError(json.MarshalIndent(m, "", "    "))))
-	_, err = manifestPutOCI(client, reference, m)
-	checkError(t, err)
+				// Log and push to registry
+				g.GinkgoWriter.Print(string(ignoreError(json.MarshalIndent(m, "", "    "))))
+				_, err = manifestPutOCI(client, reference, m)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 }
