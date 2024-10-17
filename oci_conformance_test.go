@@ -17,6 +17,8 @@ import (
 	"strings"
 	"testing"
 	"path/filepath"
+	"strconv"
+	"log"
 
 	g "github.com/onsi/ginkgo/v2"
 	"github.com/regclient/regclient/types/ref"
@@ -26,6 +28,16 @@ import (
 
 const (
 	suiteDescription = "OCI Feature Tests"
+    envVarRootURL = "REGISTRY_HOST"
+    envVarNamespace = "REGISTRY_NAMESPACE"
+    envVarUsername = "REGISTRY_USER"
+    envVarPassword = "REGISTRY_PASSWORD"
+    envVarDebug = "REGISTRY_DEBUG"
+)
+
+var (
+	httpWriter                         *httpDebugWriter
+    Version = "unknown"
 )
 
 func TestConformance(t *testing.T) {
@@ -45,9 +57,21 @@ func TestConformance(t *testing.T) {
 		testNestedIndexes()
 	})
 
-    reportJUnitFilename := filepath.Join(".", "junit.xml")
+	debug, _ := strconv.ParseBool(os.Getenv(envVarDebug))
+
+	httpWriter = newHTTPDebugWriter(debug)
+
+    reportJUnitFilename := filepath.Join(".", "report.xml")
+    reportHTMLFilename := filepath.Join(".", "report.html")
 	RegisterFailHandler(g.Fail)
 	suiteConfig, reporterConfig := g.GinkgoConfiguration()
+	hr := newHTMLReporter(reportHTMLFilename)
+	g.ReportAfterEach(hr.afterReport)
+	g.ReportAfterSuite("html custom reporter", func(r g.Report) {
+		if err := hr.endSuite(r); err != nil {
+			log.Printf("\nWARNING: cannot write HTML summary report: %v", err)
+		}
+	})
 	g.ReportAfterSuite("junit custom reporter", func(r g.Report) {
 		if reportJUnitFilename != "" {
 			_ = reporters.GenerateJUnitReportWithConfig(r, reportJUnitFilename, reporters.JunitReportConfig{
