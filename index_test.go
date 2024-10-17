@@ -23,6 +23,10 @@ import (
 	"github.com/regclient/regclient/types/ref"
 )
 
+var (
+	titleIndex = "OCI Manifest Index (Image List)"
+)
+
 func indexPutOCI(client *regclient.RegClient, ref ref.Ref, m v1.Index) (manifest.Manifest, error) {
 	ctx := context.Background()
 
@@ -71,7 +75,7 @@ func getTestManifests() []descriptor.Descriptor {
 // mediaType [...] This property SHOULD be used [...]
 // Therefore not specifying this property MUST be supported.
 var testNoIndexMediaType = func() {
-	g.Context(titleManifest, func() {
+	g.Context(titleIndex, func() {
 		g.Context("Setup", func() {
 			g.Specify("Push file and config", func() {
 				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
@@ -101,7 +105,7 @@ var testNoIndexMediaType = func() {
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.index.v1+json [...]
 var testDefaultIndexMediaType = func() {
-	g.Context(titleManifest, func() {
+	g.Context(titleIndex, func() {
 		g.Context("Setup", func() {
 			g.Specify("Push file and config", func() {
 				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
@@ -132,7 +136,7 @@ var testDefaultIndexMediaType = func() {
 // Specification says:
 // artifactType [...] MUST comply with RFC 6838
 var testIndexArtifactType = func() {
-	g.Context(titleManifest, func() {
+	g.Context(titleIndex, func() {
 		g.Context("Setup", func() {
 			g.Specify("Push file and config", func() {
 				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
@@ -164,7 +168,7 @@ var testIndexArtifactType = func() {
 // Specification says:
 // mediaType [...] when used, this field MUST contain [...] application/vnd.oci.image.index.v1+json [...]
 var testWrongIndexMediaTypeFails = func() {
-	g.Context(titleManifest, func() {
+	g.Context(titleIndex, func() {
 		g.Context("Setup", func() {
 			g.Specify("Push file and config", func() {
 				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
@@ -195,7 +199,7 @@ var testWrongIndexMediaTypeFails = func() {
 // Specification says:
 // manifests/mediaType SHOULD support [...] media types application/vnd.oci.image.index.v1+json
 var testNestedIndexes = func() {
-	g.Context(titleManifest, func() {
+	g.Context(titleIndex, func() {
 		g.Context("Setup", func() {
 			g.Specify("Push file and config", func() {
 				Expect(blobPut(client, reference, "test-data/demo-file.txt")).To(BeNil())
