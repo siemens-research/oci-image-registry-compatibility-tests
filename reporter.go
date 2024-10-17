@@ -468,14 +468,14 @@ func (l *httpDebugLogger) output(format string, v ...interface{}) {
 
 func newHTMLReporter(htmlReportFilename string) (h *HTMLReporter) {
 	enabledMap := map[string]bool{
-		titleManifest:              true,
-		titleIndex:              true,
+		titleManifest: true,
+		titleIndex:    true,
 	}
 
-    enabledMap = map[string]bool{
-        titleManifest:              true,
-        titleIndex:              true,
-    }
+	enabledMap = map[string]bool{
+		titleManifest: true,
+		titleIndex:    true,
+	}
 
 	varsToCheck := []string{
 		envVarRootURL,
@@ -599,4 +599,3 @@ func (reporter *HTMLReporter) endSuite(report types.Report) error {
 func getPercent(i, of int) int {
 	return int(math.Round(float64(i) / float64(of) * 100))
 }
-

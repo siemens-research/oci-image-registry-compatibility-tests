@@ -13,31 +13,31 @@ package main_test
 
 import (
 	"flag"
+	"log"
 	"os"
-	"strings"
-	"testing"
 	"path/filepath"
 	"strconv"
-	"log"
+	"strings"
+	"testing"
 
 	g "github.com/onsi/ginkgo/v2"
-	"github.com/regclient/regclient/types/ref"
 	"github.com/onsi/ginkgo/v2/reporters"
 	. "github.com/onsi/gomega"
+	"github.com/regclient/regclient/types/ref"
 )
 
 const (
 	suiteDescription = "OCI Feature Tests"
-    envVarRootURL = "REGISTRY_HOST"
-    envVarNamespace = "REGISTRY_NAMESPACE"
-    envVarUsername = "REGISTRY_USER"
-    envVarPassword = "REGISTRY_PASSWORD"
-    envVarDebug = "REGISTRY_DEBUG"
+	envVarRootURL    = "OCI_ROOT_URL"
+	envVarNamespace  = "OCI_NAMESPACE"
+	envVarUsername   = "OCI_USERNAME"
+	envVarPassword   = "OCI_PASSWORD"
+	envVarDebug      = "OCI_DEBUG"
 )
 
 var (
-	httpWriter                         *httpDebugWriter
-    Version = "unknown"
+	httpWriter *httpDebugWriter
+	Version    = "unknown"
 )
 
 func TestConformance(t *testing.T) {
@@ -61,8 +61,8 @@ func TestConformance(t *testing.T) {
 
 	httpWriter = newHTTPDebugWriter(debug)
 
-    reportJUnitFilename := filepath.Join(".", "report.xml")
-    reportHTMLFilename := filepath.Join(".", "report.html")
+	reportJUnitFilename := filepath.Join(".", "report.xml")
+	reportHTMLFilename := filepath.Join(".", "report.html")
 	RegisterFailHandler(g.Fail)
 	suiteConfig, reporterConfig := g.GinkgoConfiguration()
 	hr := newHTMLReporter(reportHTMLFilename)
